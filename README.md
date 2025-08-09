@@ -99,7 +99,7 @@ cargo run --release
 ```
 
 ### 🐳 Docker Architecture
-![Screenshot](./asset/images/screenshot.png)
+![Screenshot](./assets/images/screenshot.png)
 
 ### 🔧 Configuration
 ```
