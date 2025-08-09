@@ -65,6 +65,12 @@ cp .env.example .env
 ```bash
 docker-compose up -d --build
 ```
+*** OR ***
+### Running Locally
+
+```bash
+cargo run
+```
 
 ### Manual Setup
 ```
@@ -78,12 +84,13 @@ sqlx migrate run
 cargo run --release
 ```
 ### 📚 API Documentation
-| Method | Endpoint         | Description       | Auth Required |
-| ------ | ---------------- | ----------------- | ------------- |
-| POST   | `/auth/register` | User registration | No            |
-| POST   | `/auth/login`    | User login        | No            |
-| GET    | `/users`         | List users        | Admin         |
-| PUT    | `/users/:id`     | Update user       | User+         |
+| Method | Endpoint         | Description       | Auth Required | Payload | Condition | 
+| ------ | ---------------- | ----------------- | ------------- | ------------- |------------- |
+| POST   | `/localhost:8055/auth/register` | User registration | No            | 	{"firstName":"user_A_firstname", "lastName":"user_A_lastname","password":"user_A_123","username":"user_A_username","email":"user_A_@gmail.com", "gender":"Male","telephone":"+234901xxxxxxxx","country":"Country","city":"City"} | All fields require |
+| POST   | `/localhost:8055/auth/login`    | User login        | No            | 	{"password":"user_A_123", "username":"user_A_username","email":"user_A_@gmail.com", } | Password and {email or username} | 
+| GET    | `/localhost:8055/users`         | List users        | Admin and Users | - |-|
+| PUT    | `/localhost:8055/users/:id`     | Update user       | Admin and Users |-  |-| 
+| DELETE    | `/localhost:8055/users/:id`     | Delete user    | Admin and Users |-  |-| 
 
 
 ### WebSocket Protocol
@@ -101,6 +108,9 @@ cargo run --release
 ### 🐳 Docker Architecture
 ![Screenshot](./assets/images/screenshot.png)
 
+![Screenshot](./assets/images/communication.svg)
+
+    
 ### 🔧 Configuration
 ```
 DATABASE_URL=postgres://user:pass@db:5432/app
