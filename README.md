@@ -65,7 +65,7 @@ cp .env.example .env
 
 ## Download **open_llama_3b-f16.bin** Model 
 
-[Download]([https://example.com](https://huggingface.co/rustformers/open-llama-ggml/blob/main/open_llama_3b-f16.bin))
+[Download Link](https://huggingface.co/rustformers/open-llama-ggml/blob/main/open_llama_3b-f16.bin)
 
 - Then place the model inside base project Dir where Cargo.toml is.
 
