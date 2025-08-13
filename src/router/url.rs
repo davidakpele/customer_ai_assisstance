@@ -35,7 +35,6 @@ async fn handler_404() -> impl IntoResponse {
 pub fn create_routes(pool: PgPool, broadcaster: Arc<WsBroadcaster>) -> Router {
     let swagger_handler = SwaggerUi::new("/swagger-ui")
     .url("/api-docs/openapi.json", crate::swagger_doc::doc::ApiDoc::openapi());
-    // Ensure the broadcaster is used to avoid unused variable warnings
     let _ = broadcaster;
     let auth_routes = Router::new()
         .route("/auth/register", post(register_user))
@@ -59,7 +58,6 @@ pub fn create_routes(pool: PgPool, broadcaster: Arc<WsBroadcaster>) -> Router {
         .merge(auth_routes)
         .merge(user_routes)
         .merge(admin_routes)
-        //.merge(swagger_handler)
         .route("/", get(default_handler))
         .fallback(handler_404)
         .layer(Extension(pool))

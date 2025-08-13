@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::payloads::communication_request::CommunicationRequest;
 use crate::payloads::communication_response::CommunicationResponse;
 use crate::payloads::connection_request::ConnectionRequest;
+use crate::services::llm_service::LlmService;
 use crate::{
     services::user_service::UserService,
     utils::jwt::Claims,
@@ -66,11 +67,11 @@ pub async fn handle_ws_connection(
     broadcaster: Arc<WsBroadcaster>,
     redis_client: Arc<Client>,
     user_service: Arc<UserService>,
+    llm_service: Arc<LlmService>,
 ) {
-    println!("[{}] New connection from: {}", client_id, peer);
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
 
-    // 1. AUTHENTICATION PHASE (using your existing WsAuth exactly as is)
+    // 1. AUTHENTICATION PHASE 
     let (user_id, claims) = match ws_receiver.next().await {
         Some(Ok(first_msg)) => {
             match WsAuth::from_first_message(&first_msg).await {
@@ -85,7 +86,7 @@ pub async fn handle_ws_connection(
                                 "status": "authentication_failed",
                                 "error": msg,
                                 "code": code.as_u16()
-                            }).to_string().into()  // Removed .into() since to_string() already gives String
+                            }).to_string().into() 
                         )).await;
                     return;
                 }
@@ -191,16 +192,34 @@ pub async fn handle_ws_connection(
                                     Ok(comm_req) => {
                                         match comm_req {
                                             CommunicationRequest::AIRequest { prompt } => {
-                                                // Process AI request
-                                                let response = format!("Processed: {}", prompt);
-                                                let _ = broadcaster.send_to(
-                                                    &client_id,
-                                                    serde_json::to_string(&CommunicationResponse::AIResponse {
-                                                        status: "processed".to_string(),
-                                                        response,
-                                                    }).unwrap()
-                                                ).await;
+                                                let llm_service = llm_service.clone();
+                                                let broadcaster = broadcaster.clone();
+                                                let client_id = client_id.clone();
+
+                                                tokio::spawn(async move {
+                                                    match llm_service.run_prompt(&prompt).await {
+                                                        Ok(ai_output) => {
+                                                            let _ = broadcaster.send_to(
+                                                                &client_id,
+                                                                serde_json::to_string(&CommunicationResponse::AIResponse {
+                                                                    status: "success".to_string(),
+                                                                    response: ai_output,
+                                                                }).unwrap()
+                                                            ).await;
+                                                        }
+                                                        Err(e) => {
+                                                            let _ = broadcaster.send_to(
+                                                                &client_id,
+                                                                serde_json::to_string(&CommunicationResponse::Error {
+                                                                    status: "ai_error".to_string(),
+                                                                    error: format!("AI processing failed: {}", e),
+                                                                }).unwrap()
+                                                            ).await;
+                                                        }
+                                                    }
+                                                });
                                             }
+
                                         }
                                     }
                                     Err(_) => {

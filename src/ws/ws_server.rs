@@ -6,7 +6,7 @@ use uuid::Uuid;
 use redis::Client;
 
 use crate::{
-    services::user_service::UserService, ws::{ws_channel::WsBroadcaster, ws_handler::handle_ws_connection}
+    services::{llm_service::LlmService, user_service::UserService}, ws::{ws_channel::WsBroadcaster, ws_handler::handle_ws_connection}
 };
 
 pub async fn start_ws_server(
@@ -14,6 +14,7 @@ pub async fn start_ws_server(
     broadcaster: Arc<WsBroadcaster>,
     redis_client: Arc<Client>,
     user_service: Arc<UserService>,
+    llm_service: Arc<LlmService>,
 ) {
     let listener = TcpListener::bind(addr)
         .await
@@ -26,12 +27,13 @@ pub async fn start_ws_server(
             .peer_addr()
             .unwrap_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)));
 
+        let llm_service = llm_service.clone();
         let broadcaster = broadcaster.clone();
         let redis_client = redis_client.clone();
         let user_service = user_service.clone(); 
         
         tokio::spawn(async move {
-            handle_connection(stream, peer, broadcaster, redis_client, user_service).await;
+            handle_connection(stream, peer, broadcaster, redis_client, user_service, llm_service).await;
         });
     }
 }
@@ -42,9 +44,11 @@ async fn handle_connection(
     broadcaster: Arc<WsBroadcaster>,
     redis_client: Arc<Client>,
     user_service: Arc<UserService>,
+    llm_service: Arc<LlmService>
 ) {
     if let Ok(ws_stream) = accept_async(stream).await {
         let client_id = Uuid::new_v4();
-        handle_ws_connection(ws_stream, client_id, peer, broadcaster, redis_client, user_service).await;
+        let llm_service = llm_service.clone();
+        handle_ws_connection(ws_stream, client_id, peer, broadcaster, redis_client, user_service, llm_service).await;
     }
 }

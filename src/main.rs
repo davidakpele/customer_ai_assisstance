@@ -44,18 +44,26 @@ async fn main() {
 
     let broadcaster = Arc::new(WsBroadcaster::new());
     let user_service = Arc::new(user_service::UserService::new(repository::user_repository::UserRepository { db: pool.clone() }));
+    let llm_service = match services::llm_service::LlmService::new() {
+        Ok(service) => Arc::new(service),
+        Err(e) => {
+            eprintln!("❌ Failed to initialize LLM service: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     tokio::spawn({
         let broadcaster = broadcaster.clone();
         let redis_client = redis_client.clone();
         let user_service = user_service.clone();
-
+        let llm_service = llm_service.clone();
         async move {
             start_ws_server(
                 "0.0.0.0:9001",
                 broadcaster,
                 redis_client,
                 user_service,
+                llm_service,
             ).await;
         }
     });
