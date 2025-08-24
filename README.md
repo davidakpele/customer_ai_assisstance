@@ -101,6 +101,10 @@ docker rm -f redis
 cargo build
 
 # Run migrations
+cargo install sqlx-cli
+
+THEN
+
 sqlx migrate run
 
 # Start server
